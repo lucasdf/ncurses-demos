@@ -21,12 +21,10 @@ void print_in_middle(WINDOW *win, int starty, int startx, int width,
                      char *string, chtype color);
 void set_user_ptrs(PANEL **panels, int n);
 
-int resize(enum Command command, int newx, int newy, int newh, int neww,
-           WINDOW *old_win, WINDOW *temp_win, PANEL *stack_top,
-           PANEL_DATA *top) {
-  move(LINES - 4, 0);
-  clrtoeol();
-  refresh();
+int process_command(enum Command command, int newx, int newy, int newh,
+                    int neww, PANEL *stack_top, PANEL_DATA *top) {
+  WINDOW *temp_win;
+  WINDOW *old_win;
 
   switch (command) {
   case CommandResize:
@@ -46,6 +44,10 @@ int resize(enum Command command, int newx, int newy, int newh, int neww,
 }
 
 void print_current_command(enum Command command) {
+  attron(COLOR_PAIR(4));
+  mvprintw(LINES - 3, 0, "Use 'm' for moving, 'r' for resizing");
+  mvprintw(LINES - 2, 0, "Use tab to browse through the windows (F1 to Exit)");
+  attroff(COLOR_PAIR(4));
   if (command == CommandResize) {
     attron(COLOR_PAIR(4));
     mvprintw(LINES - 4, 0,
@@ -62,7 +64,6 @@ void print_current_command(enum Command command) {
     move(LINES - 4, 0);
     clrtoeol();
   }
-  refresh();
 }
 
 int main() {
@@ -70,7 +71,6 @@ int main() {
   PANEL *my_panels[3];
   PANEL_DATA *top;
   PANEL *stack_top;
-  WINDOW *temp_win = NULL, *old_win = NULL;
   int ch;
   int newx, newy, neww, newh;
   enum Command command = CommandIdle;
@@ -142,8 +142,7 @@ int main() {
       default:
         break;
       }
-      resize(command, newx, newy, newh, neww, old_win, temp_win, stack_top,
-             top);
+      process_command(command, newx, newy, newh, neww, stack_top, top);
       break;
     case KEY_RIGHT:
       if (command == CommandResize) {
@@ -151,8 +150,7 @@ int main() {
         --neww;
       } else if (command == CommandMove)
         ++newx;
-      resize(command, newx, newy, newh, neww, old_win, temp_win, stack_top,
-             top);
+      process_command(command, newx, newy, newh, neww, stack_top, top);
       break;
     case KEY_UP:
       if (command == CommandResize) {
@@ -160,8 +158,7 @@ int main() {
         ++newh;
       } else if (command == CommandMove)
         --newy;
-      resize(command, newx, newy, newh, neww, old_win, temp_win, stack_top,
-             top);
+      process_command(command, newx, newy, newh, neww, stack_top, top);
       break;
     case KEY_DOWN:
       if (command == CommandResize) {
@@ -169,18 +166,12 @@ int main() {
         --newh;
       } else if (command == CommandMove)
         ++newy;
-      resize(command, newx, newy, newh, neww, old_win, temp_win, stack_top,
-             top);
+      process_command(command, newx, newy, newh, neww, stack_top, top);
       break;
     case 10: /* Enter */
       command = CommandIdle;
       break;
     }
-    attron(COLOR_PAIR(4));
-    mvprintw(LINES - 3, 0, "Use 'm' for moving, 'r' for resizing");
-    mvprintw(LINES - 2, 0,
-             "Use tab to browse through the windows (F1 to Exit)");
-    attroff(COLOR_PAIR(4));
     print_current_command(command);
     refresh();
     update_panels();

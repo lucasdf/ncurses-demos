@@ -12,6 +12,10 @@ typedef struct _PANEL_DATA {
 
 #define NLINES 10
 #define NCOLS 40
+#define MIN_H 4
+#define MIN_W 2
+#define MIN_X 0
+// MAX_X = maxx from screen - w
 
 enum Command { CommandIdle, CommandMove, CommandResize };
 
@@ -40,13 +44,25 @@ int process_command(enum Command command, int newx, int newy, int newh,
   default:
     break;
   }
+  top->x = newx;
+  top->y = newy;
+  top->w = neww;
+  top->h = newh;
   return 0;
 }
 
-void print_current_command(enum Command command) {
+void print_information(enum Command command, PANEL_DATA *top) {
+  move(LINES - 3, 0);
+  clrtoeol();
+  move(LINES - 2, 0);
+  clrtoeol();
+  move(LINES - 1, 0);
+  clrtoeol();
   attron(COLOR_PAIR(4));
   mvprintw(LINES - 3, 0, "Use 'm' for moving, 'r' for resizing");
   mvprintw(LINES - 2, 0, "Use tab to browse through the windows (F1 to Exit)");
+  mvprintw(LINES - 1, 0, "%s, pos-x %d, pos-y %d, w %d, h %d", top->label,
+           top->x, top->y, top->w, top->h);
   attroff(COLOR_PAIR(4));
   if (command == CommandResize) {
     attron(COLOR_PAIR(4));
@@ -100,11 +116,6 @@ int main() {
   update_panels();
 
   /* Show it on the screen */
-  attron(COLOR_PAIR(4));
-  mvprintw(LINES - 3, 0, "Use 'm' for moving, 'r' for resizing");
-  mvprintw(LINES - 2, 0, "Use tab to browse through the windows (F1 to Exit)");
-  attroff(COLOR_PAIR(4));
-  doupdate();
 
   stack_top = my_panels[2];
   top = (PANEL_DATA *)panel_userptr(stack_top);
@@ -112,6 +123,9 @@ int main() {
   newy = top->y;
   neww = top->w;
   newh = top->h;
+
+  print_information(command, top);
+  doupdate();
   while ((ch = getch()) != KEY_F(1)) {
     switch (ch) {
     case 9: /* Tab */
@@ -146,8 +160,10 @@ int main() {
       break;
     case KEY_RIGHT:
       if (command == CommandResize) {
-        ++newx;
-        --neww;
+        if (neww > MIN_W) {
+          ++newx;
+          --neww;
+        }
       } else if (command == CommandMove)
         ++newx;
       process_command(command, newx, newy, newh, neww, stack_top, top);
@@ -162,8 +178,10 @@ int main() {
       break;
     case KEY_DOWN:
       if (command == CommandResize) {
-        ++newy;
-        --newh;
+        if (newh > MIN_H) {
+          ++newy;
+          --newh;
+        }
       } else if (command == CommandMove)
         ++newy;
       process_command(command, newx, newy, newh, neww, stack_top, top);
@@ -172,7 +190,7 @@ int main() {
       command = CommandIdle;
       break;
     }
-    print_current_command(command);
+    print_information(command, top);
     refresh();
     update_panels();
     doupdate();

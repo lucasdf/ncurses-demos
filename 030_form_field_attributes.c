@@ -23,7 +23,7 @@ int main() {
 
   set_field_back(field[1], A_UNDERLINE);
   field_opts_off(field[0], O_ACTIVE);
-  field_opts_off(field[1], O_PUBLIC);
+  field_opts_off(field[1], O_PUBLIC); // dont display input (eg. for passwords)
   field_opts_off(field[1], O_AUTOSKIP);
 
   my_form = new_form(field);
@@ -46,6 +46,9 @@ int main() {
     case KEY_UP:
       form_driver(my_form, REQ_PREV_FIELD);
       form_driver(my_form, REQ_END_LINE);
+      break;
+    case KEY_BACKSPACE:
+      form_driver(my_form, REQ_DEL_PREV);
       break;
     default:
       form_driver(my_form, ch);

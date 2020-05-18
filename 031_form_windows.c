@@ -50,9 +50,13 @@ int main() {
     case KEY_DOWN:
       form_driver(my_form, REQ_NEXT_FIELD);
       form_driver(my_form, REQ_END_LINE);
+      break;
     case KEY_UP:
       form_driver(my_form, REQ_PREV_FIELD);
       form_driver(my_form, REQ_END_LINE);
+      break;
+    case KEY_BACKSPACE:
+      form_driver(my_form, REQ_DEL_PREV);
       break;
     default:
       form_driver(my_form, ch);
